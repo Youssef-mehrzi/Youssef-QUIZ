@@ -1,0 +1,13 @@
+{
+  "name": "youssef-secrets-quiz",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Youssef quiz with server-side submissions and a protected user list",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

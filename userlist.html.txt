@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>UserList - Youssef Quiz</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      margin: 0;
+      padding: 24px;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    h1 {
+      color: #7dd3fc;
+    }
+
+    button {
+      background: #0284c7;
+      color: white;
+      border: 0;
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 16px;
+      margin: 14px 0;
+      overflow-wrap: anywhere;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #475569;
+      padding: 10px;
+      text-align: right;
+    }
+
+    th {
+      color: #7dd3fc;
+    }
+
+    .muted {
+      color: #cbd5e1;
+    }
+
+    .scroll {
+      overflow-x: auto;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main>
+
+    <h1>قائمة المشاركين — UserList</h1>
+
+    <p class="muted">
+      الصفحة هاذي خاصة بصاحب الموقع.
+      ما تشاركش كلمة السر مع الناس.
+    </p>
+
+    <button id="refresh">
+      تحديث القائمة
+    </button>
+
+    <p id="status" class="muted">
+      جاري تحميل النتائج...
+    </p>
+
+    <div id="results"></div>
+
+  </main>
+
+  <script>
+    async function loadList() {
+      const status = document.getElementById('status');
+      const results = document.getElementById('results');
+
+      status.textContent = 'جاري تحميل النتائج...';
+      results.innerHTML = '';
+
+      try {
+        const res = await fetch('/api/userlist', {
+          cache: 'no-store'
+        });
+
+        if (res.status === 401) {
+          status.textContent =
+            'يلزمك تسجّل الدخول بحساب المدير.';
+          return;
+        }
+
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status);
+        }
+
+        const list = await res.json();
+
+        status.textContent =
+          'عدد المشاركات: ' + list.length;
+
+        if (!list.length) {
+          results.innerHTML =
+            '<div class="card">ما فما حتى نتيجة توّة.</div>';
+          return;
+        }
+
+        list.slice().reverse().forEach((u) => {
+          const card = document.createElement('section');
+          card.className = 'card';
+
+          const title = document.createElement('h2');
+          title.textContent = u.name || 'بدون اسم';
+
+          card.appendChild(title);
+
+          const summary = document.createElement('p');
+
+          summary.textContent =
+            `النتيجة: ${u.score} / ${u.totalQuestions}` +
+            ` — التاريخ: ${u.completedAt || 'غير معروف'}`;
+
+          card.appendChild(summary);
+
+          const wrap = document.createElement('div');
+          wrap.className = 'scroll';
+
+          const table = document.createElement('table');
+
+          const thead = document.createElement('thead');
+
+          thead.innerHTML =
+            '<tr>' +
+            '<th>السؤال</th>' +
+            '<th>الإجابة</th>' +
+            '<th>صحيحة؟</th>' +
+            '</tr>';
+
+          table.appendChild(thead);
+
+          const tbody = document.createElement('tbody');
+
+          (u.answers || []).forEach(a => {
+            const tr = document.createElement('tr');
+
+            [
+              a.questionNumber,
+              a.choice,
+              a.correct ? 'نعم' : 'لا'
+            ].forEach(v => {
+              const td = document.createElement('td');
+
+              td.textContent = String(v ?? '');
+
+              tr.appendChild(td);
+            });
+
+            tbody.appendChild(tr);
+          });
+
+          table.appendChild(tbody);
+          wrap.appendChild(table);
+          card.appendChild(wrap);
+          results.appendChild(card);
+        });
+
+      } catch (e) {
+        status.textContent =
+          'ما نجّمش نحمل القائمة. تأكّد اللي السيرفر يخدم.';
+
+        console.error(e);
+      }
+    }
+
+    document
+      .getElementById('refresh')
+      .addEventListener('click', loadList);
+
+    loadList();
+  </script>
+
+</body>
+</html>
